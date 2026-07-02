@@ -319,24 +319,8 @@ MVVM_Ueong/
 │   └── Screens/         # 15개 화면 × (View + ViewModel) 쌍
 └── Utils/               # KeychainHelper · TokenManager · UserDefaultsManager
 docs/
-├── images/              # 스크린샷
-└── presentation.pdf     # 발표자료
+└── images/              # 스크린샷
 ```
-
----
-
-## 발표자료
-
-[📄 프로젝트 발표 슬라이드](./docs/presentation.pdf)
-
----
-
-## 팀원 소개
-
-| 역할 | 이름 | 담당 기술 |
-|------|------|---------|
-| **iOS 앱 개발** | [이름](https://github.com/username) | SwiftUI · MVVM+Repository · RealityKit AR · 마켓플레이스 전 기능 |
-| **Cloud / 백엔드** | [이름](https://github.com/username) | Node.js/Express · Socket.IO · AWS EC2 인프라 |
 
 ---
 
