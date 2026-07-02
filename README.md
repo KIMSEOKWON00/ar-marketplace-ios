@@ -133,7 +133,7 @@ let response: Response = try await APICall.shared.post("photo", files: files)
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                        iOS 앱 (어웡)                             │
+│                             iOS 앱                              │
 │                                                                │
 │  SwiftUI Views  ──►  ViewModels  ──►  Repositories (×11)       │
 │     (15 화면)       @Published          Post / Photo / AR       │
