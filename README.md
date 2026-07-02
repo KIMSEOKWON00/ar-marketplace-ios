@@ -7,16 +7,15 @@
 ██╔══██║██╔══██╗     ██║╚██╔╝██║██╔══██║██╔══██╗██╔═██╗ ██╔══╝     ██║   
 ██║  ██║██║  ██║     ██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██╗███████╗   ██║   
 ╚═╝  ╚═╝╚═╝  ╚═╝     ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝  
-                        AR × 동네 중고거래 마켓플레이스
 ```
 
 <div align="center">
 
 ![Swift](https://img.shields.io/badge/Swift-5.0-FA7343?logo=swift&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-17.5+-000000?logo=apple&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-5-0070C9?logo=swift&logoColor=white)
-![RealityKit](https://img.shields.io/badge/RealityKit-ObjectCapture-5856D6?logo=apple&logoColor=white)
-![Socket.IO](https://img.shields.io/badge/Socket.IO-Realtime_Chat-010101?logo=socketdotio&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-선언형_UI-0070C9?logo=swift&logoColor=white)
+![RealityKit](https://img.shields.io/badge/RealityKit-ObjectCaptureSession-5856D6?logo=apple&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-실시간_채팅-010101?logo=socketdotio&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-EC2-FF9900?logo=amazonwebservices&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white)
 
@@ -30,72 +29,81 @@
 
 ---
 
+## 배경 및 동기
+
+중고거래에서 상품의 실제 크기·질감은 사진만으로 파악하기 어렵습니다. 특히 가구나 가전처럼 공간을 차지하는 물건은 "내 방에 실제로 맞을까?"를 구매 전에 확인할 방법이 없습니다.
+
+Apple LiDAR 센서와 RealityKit의 `ObjectCaptureSession`을 활용해 **판매자가 상품을 직접 3D 스캔하고, 구매자가 AR로 실제 공간에 배치해 확인**하는 워크플로우를 구현했습니다. 당근마켓류의 동네 C2C 직거래 기능 위에 AR을 Native하게 통합한 것이 이 프로젝트의 핵심입니다.
+
+---
+
+## 기술 하이라이트
+
+- **Apple 고수준 AR API 전략** — 저수준 `ARSession`/`ARView` 없이 `ObjectCaptureSession`(스캔) + `QLPreviewController`(뷰어)만으로 고품질 AR UX 구현. 코드 복잡도를 낮추면서 Apple이 보장하는 최적화된 렌더링 품질 확보
+- **Swift Concurrency 기반 이벤트 스트리밍** — AR 세션 이벤트를 콜백 없이 `AsyncSequence`의 `for await` 루프로 구독. 상태 전환 로직이 선형적으로 읽힘
+- **커스텀 `AsyncIteratorProtocol`** — `PhotogrammetrySession.outputs`가 완료 후에도 스트림을 종료하지 않는 RealityKit 동작을 `UntilProcessingCompleteFilter`로 직접 해결
+- **AR ↔ 마켓플레이스 느슨한 결합** — `Post.ar_model_id (Int?)` · `ar_model_directory (String?)` 두 Optional 필드만으로 두 도메인 연결. AR 모델이 없는 일반 게시글과 완벽히 공존
+- **3-Orbit 촬영 가이드 UX** — 단순 촬영 버튼이 아닌, iPhone/iPad별 MP4 튜토리얼 10개와 `OnboardingStateMachine`으로 최적 촬영 각도(수평/저각/고각)를 단계별 안내
+
+---
+
 ## 주요 기능
 
 ### AR 3D 스캔 — 판매자
 
-LiDAR 카메라로 판매할 물건을 3방향(Orbit)으로 촬영하면, on-device 포토그래메트리로 자동으로 USDZ 3D 모델을 생성합니다.
+LiDAR로 물건을 3방향 촬영 → on-device 포토그래메트리로 USDZ 3D 모델 자동 생성
 
-| 스캔 시작 | 3-Orbit 촬영 가이드 | 3D 재구성 진행 |
-|:---------:|:-------------------:|:--------------:|
+| 스캔 시작 | 3-Orbit 촬영 가이드 | 재구성 진행 |
+|:---------:|:-------------------:|:-----------:|
 | ![스크린샷](./docs/images/ar_scan_start.png) | ![스크린샷](./docs/images/ar_orbit_guide.png) | ![스크린샷](./docs/images/ar_reconstruct.png) |
 
 ### AR 뷰어 — 구매자
 
-상품 상세 페이지에서 AR 버튼을 누르면, 실제 방 안에 3D 모델을 배치해 크기와 디자인을 확인할 수 있습니다.
+상품 상세에서 USDZ 다운로드 → AR Quick Look으로 실제 공간에 3D 모델 배치
 
-| 상품 상세 | AR 뷰어 (실제 공간 배치) |
-|:---------:|:------------------------:|
+| 상품 상세 | AR 뷰어 (실제 공간) |
+|:---------:|:-------------------:|
 | ![스크린샷](./docs/images/post_detail.png) | ![스크린샷](./docs/images/ar_viewer.png) |
 
 ### 마켓플레이스
 
-| 상품 목록 (동네/AR 필터) | 게시글 등록 | 실시간 채팅 |
-|:------------------------:|:-----------:|:-----------:|
+| 상품 목록 | 게시글 등록 | 실시간 채팅 |
+|:---------:|:-----------:|:-----------:|
 | ![스크린샷](./docs/images/posts_list.png) | ![스크린샷](./docs/images/write_post.png) | ![스크린샷](./docs/images/chat.png) |
 
 **구현된 기능:**
-
-- 상품 CRUD (등록 / 수정 / 비활성화)
-- 동네·AR 전용·정렬 기준 필터 + 검색어 검색
-- 상품 사진 다중 업로드 (PHPickerViewController → multipart)
-- 관심 목록 (낙관적 업데이트)
-- 거래 희망 장소 지도 핀 선택 (MapKit)
-- 판매 내역 (거래대기 / 거래완료)
+- 상품 CRUD (등록 / 수정 / 비활성화) · 동네·AR 전용·정렬 필터 · 검색
+- 상품 사진 다중 업로드 (PHPickerViewController → multipart/form-data)
+- 관심 목록 낙관적 업데이트 · 거래 희망 장소 지도 핀 선택 (MapKit)
+- 판매 내역 (거래대기 / 거래완료) · JWT 자동 로그인 + Keychain 토큰 저장
 - Socket.IO 기반 1:1 실시간 채팅
-- JWT 자동 로그인 + iOS Keychain 토큰 저장
 
 ---
 
 ## 기술 스택
 
-### iOS / Frontend
+### iOS
 
-| 분류 | 기술 |
-|------|------|
-| **UI** | ![SwiftUI](https://img.shields.io/badge/SwiftUI-선언형_UI-0070C9?logo=swift&logoColor=white) ![UIKit](https://img.shields.io/badge/UIKit-브리징-2396F3?logo=apple&logoColor=white) |
-| **아키텍처** | ![MVVM](https://img.shields.io/badge/MVVM-Repository_Pattern-6C6C6C) ![Combine](https://img.shields.io/badge/Combine-@Published-FA7343?logo=swift&logoColor=white) |
-| **AR / 3D** | ![RealityKit](https://img.shields.io/badge/RealityKit-ObjectCaptureSession-5856D6?logo=apple&logoColor=white) ![ARKit](https://img.shields.io/badge/ARKit-QuickLook-5856D6?logo=apple&logoColor=white) |
-| **지도** | ![MapKit](https://img.shields.io/badge/MapKit-거래_장소_선택-34C759?logo=apple&logoColor=white) |
-| **보안** | ![Keychain](https://img.shields.io/badge/Keychain-JWT_저장-000000?logo=apple&logoColor=white) |
-| **미디어** | ![PhotosUI](https://img.shields.io/badge/PhotosUI-PHPickerViewController-4CAF50) ![AVKit](https://img.shields.io/badge/AVKit-튜토리얼_영상-FF3B30) |
-
-### 네트워크
-
-| 분류 | 기술 |
-|------|------|
-| **REST API** | ![URLSession](https://img.shields.io/badge/URLSession-async%2Fawait-FA7343?logo=swift&logoColor=white) — Alamofire 미사용, 제네릭 직접 구현 |
-| **실시간** | ![Socket.IO](https://img.shields.io/badge/socket.io--client--swift-SPM-010101?logo=socketdotio&logoColor=white) + ![Starscream](https://img.shields.io/badge/Starscream-4.0.8-4B8BBE) |
-| **인증** | ![JWT](https://img.shields.io/badge/JWT-Bearer_Token-000000?logo=jsonwebtokens&logoColor=white) (커스텀 서버 발급) |
+| 분류 | 기술 | 선택 이유 |
+|------|------|----------|
+| **UI** | SwiftUI | 선언형 UI + iOS 17 신규 API와의 자연스러운 통합 |
+| **UIKit 브리징** | `UIViewControllerRepresentable` | PHPickerViewController, QLPreviewController 등 SwiftUI 미지원 컴포넌트 래핑 |
+| **AR 스캔** | RealityKit · `ObjectCaptureSession` | LiDAR 기반 3D 캡처 — iOS 17+, LiDAR 기기 전용 |
+| **AR 뷰어** | `QLPreviewController` (AR Quick Look) | 별도 ARSession 없이 바닥 감지·배치·조명·그림자를 Apple이 자동 처리 |
+| **네트워킹** | URLSession (직접 구현) | Alamofire 등 외부 의존성 배제, 제네릭 메서드로 타입 안전 HTTP 클라이언트 직접 작성 |
+| **실시간 채팅** | socket.io-client-swift (SPM) | Socket.IO 서버와 이벤트 기반 양방향 통신 |
+| **지도** | MapKit · `MKLocalSearchCompleter` | 동네 주소 자동완성 + 거래 희망 장소 핀 선택 |
+| **보안** | Keychain (`kSecClassGenericPassword`) | JWT AccessToken — UserDefaults 대비 OS 수준 암호화 저장 |
+| **미디어** | AVKit · PhotosUI | AR 튜토리얼 MP4 루프 재생 / 갤러리 다중 이미지 선택 |
 
 ### 인프라 / 백엔드
 
-| 분류 | 기술 |
+| 항목 | 기술 |
 |------|------|
-| **서버** | ![AWS EC2](https://img.shields.io/badge/AWS-EC2-FF9900?logo=amazonwebservices&logoColor=white) 단일 인스턴스 |
-| **API** | ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white) — REST API + Socket.IO 서버 |
-| **파일 저장** | EC2 로컬 디스크 (이미지 + USDZ, `express.static` 서빙) |
-| **의존성 관리** | ![SPM](https://img.shields.io/badge/SPM-Swift_Package_Manager-FA7343?logo=swift&logoColor=white) |
+| **서버** | AWS EC2 단일 인스턴스 |
+| **API** | Node.js / Express — REST API + Socket.IO 채팅 서버 동일 포트(3000) |
+| **파일 서빙** | `express.static` — 이미지 및 USDZ 파일 직접 서빙 |
+| **인증** | 커스텀 JWT Bearer Token (Firebase / Cognito 미사용) |
 
 ---
 
@@ -104,56 +112,26 @@ LiDAR 카메라로 판매할 물건을 3방향(Orbit)으로 촬영하면, on-dev
 ### 전체 구조
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      iOS 앱 (어웡)                               │
-│                                                                 │
-│  ┌─────────────┐    ┌─────────────┐    ┌──────────────────────┐│
-│  │ SwiftUI View│───►│  ViewModel  │───►│    Repository (×11)  ││
-│  │  (15개 화면) │    │ @Published  │    │ Post / Photo / AR    ││
-│  └─────────────┘    └─────────────┘    │ User / Chat / ...    ││
-│                            │           └──────────┬───────────┘│
-│                     NotificationCenter            │             │
-│                            │           ┌──────────▼───────────┐│
-│  ┌─────────────────────┐   │           │  Network/APICall.swift││
-│  │ SocketManagerService│   │           │  제네릭 HTTP 클라이언트 ││
-│  │ (Socket.IO Singleton)│  │           │  URLSession async/await│
-│  └─────────────────────┘   │           └──────────────────────┘│
-└──────────────┬─────────────┼──────────────────────┬────────────┘
-               │ Socket.IO   │ NotificationCenter    │ HTTP
-               │ WebSocket   │ .tokenExpired 등      │ REST API
-               ▼             ▼                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  AWS EC2 (Node.js + Express)                     │
-│                                                                 │
-│   REST API (JSON)  ─────────────────────────────────────────    │
-│   Socket.IO 채팅 서버  ──────────────────────────────────────   │
-│   express.static (이미지 + USDZ 파일 서빙)  ────────────────── │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 앱 내부 레이어 구조 (MVVM + Repository)
-
-```
 ┌──────────────────────────────────────────────────────────────┐
-│  Presentation Layer                                          │
+│                        iOS 앱 (어웡)                          │
 │                                                              │
-│  UI/Screens/<화면>View.swift  ←──►  <화면>ViewModel.swift    │
-│  UI/Component/ (PostRow, SearchBar, SelectRegion ...)        │
-│  ARCapture/  (독립 서브시스템 — 상태 머신 구조)              │
-├──────────────────────────────────────────────────────────────┤
-│  Domain Layer                                                │
-│                                                              │
-│  Models/  (Post, User, Chat, AR, Emd, Message ...)          │
-│  System/AppState.swift  (전역 인증 상태, EnvironmentObject)  │
-├──────────────────────────────────────────────────────────────┤
-│  Data Layer                                                  │
-│                                                              │
-│  Repositories/ (11개 — 도메인별 API 추상화)                   │
-│  Network/APICall.swift  (Singleton, 300줄)                    │
-│  Service/Socket.swift   (SocketManagerService Singleton)      │
-│  Utils/  (KeychainHelper · TokenManager · UserDefaultsManager)│
+│  SwiftUI Views  ──►  ViewModels  ──►  Repositories (×11)    │
+│     (15 화면)       @Published          Post / Photo / AR     │
+│                          │              User / Chat / ...    │
+│                    NotificationCenter            │           │
+│                    .tokenExpired 등              ▼           │
+│  SocketManagerService ◄────────────► APICall.swift (Singleton)│
+│  (Socket.IO Singleton)              URLSession async/await   │
+└──────────────┬───────────────────────────────────┬──────────┘
+               │ Socket.IO (WebSocket)              │ HTTP REST
+               ▼                                   ▼
+┌──────────────────────────────────────────────────────────────┐
+│               AWS EC2 — Node.js / Express (:3000)            │
+│   REST API · Socket.IO 채팅 서버 · express.static 파일 서빙  │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+> **ARCapture 서브시스템**은 MVVM 패턴을 따르지 않습니다. `AppDataModel.instance` Singleton이 `ModelState` 상태 머신을 소유하며, `ObjectCaptureSession` → `PhotogrammetrySession` 전환을 직접 제어합니다.
 
 ### 데이터 흐름
 
@@ -161,29 +139,24 @@ LiDAR 카메라로 판매할 물건을 3방향(Orbit)으로 촬영하면, on-dev
 사용자 액션 → SwiftUI View
        │
        ▼  Task { await ... }
-   ViewModel  (@Published 상태 소유)
+   ViewModel  — @Published 상태 소유
        │  try await repository.method()
        ▼
-   Repository  (도메인 API 추상화)
-       │  try await APICall.shared.get/post/patch/delete()
+   Repository  — 도메인별 API 추상화
+       │  try await APICall.shared.get/post/patch/delete<T: Decodable>()
        ▼
-   APICall.request<T: Decodable>()
-       │  URL 구성 → Bearer JWT 헤더 → URLSession.data(for:)
-       ▼
-   JSONDecoder().decode(T.self, from: data)
+   URLSession.data(for:) — Bearer JWT 헤더 자동 첨부
        │
-       ▼  await MainActor.run { self.data = result }
-   @Published 변경 → SwiftUI 자동 재렌더링
+       ▼  JSONDecoder().decode(T.self, from: data)
+   @Published 업데이트 → SwiftUI 자동 재렌더링
 
-── 실시간 채팅 ──────────────────────────────────────────
-   ChatView → socket.emit("sendMessage", ...)
-       │
-       ▼  Socket.IO 서버 → "sendMessageResponse"
-   SocketManagerService → NotificationCenter.post(.sendMessageResponse)
-       │
-       ▼  ChatViewModel (Observer)
-   @Published var messages → SwiftUI 재렌더링
+── 실시간 채팅 ──────────────────────────────────────
+   socket.emit("sendMessage")  →  Socket.IO 서버
+       └─ "sendMessageResponse"  →  NotificationCenter
+             └─ ChatViewModel Observer  →  @Published var messages
 ```
+
+**인증 흐름**: 401 응답 → `NotificationCenter.post(.tokenExpired)` → `AppState.isLoggedIn = false` → 강제 재로그인
 
 ---
 
@@ -191,183 +164,140 @@ LiDAR 카메라로 판매할 물건을 3방향(Orbit)으로 촬영하면, on-dev
 
 ### 두 가지 AR 워크플로우
 
-어웡의 AR은 완전히 다른 목적의 두 워크플로우로 구성됩니다.
-
-| 워크플로우 | 사용자 | 핵심 API | 담당 모듈 |
-|-----------|--------|---------|---------|
-| **3D 스캔** | 판매자 — 상품을 3D 모델로 변환 | `ObjectCaptureSession` + `PhotogrammetrySession` | `ARCapture/` (26개 파일) |
-| **AR 뷰어** | 구매자 — 실제 공간에 3D 모델 배치 | `QLPreviewController` (AR Quick Look) | `UI/Screens/AugmentedReality/` |
+| | **AR 스캔** | **AR 뷰어** |
+|--|------------|------------|
+| **사용자** | 판매자 | 구매자 |
+| **목적** | 실물 상품 → USDZ 3D 모델 변환 | USDZ 모델을 실제 공간에 배치 |
+| **핵심 API** | `ObjectCaptureSession` + `PhotogrammetrySession` | `QLPreviewController` (AR Quick Look) |
+| **담당 모듈** | `ARCapture/` (26개 파일) | `UI/Screens/AugmentedReality/` |
+| **기기 요건** | LiDAR 탑재 기기 필수 | iPhone / iPad 전 모델 |
 
 ### AR 스캔 파이프라인
 
 ```
-[WritePost] → "모델 생성하기" → MainCaptureView
-                                      │
-          ┌───────────────────────────▼──────────────────────────────┐
-          │ ObjectCaptureSession (RealityKit)                         │
-          │                                                           │
-          │  Configuration {                                          │
-          │    checkpointDirectory: 재구성 재개용 스냅샷 저장           │
-          │    isOverCaptureEnabled: true  // 추가 촬영 허용           │
-          │  }                                                        │
-          │                                                           │
-          │  CapturePrimaryView                                       │
-          │    ├── ObjectCaptureView  (바운딩 박스 + 카메라 피드)      │
-          │    ├── CaptureOverlayView (촬영 수, 수동 셔터, 품질 피드백) │
-          │    └── 3-Orbit 가이드     (수평 × 저각 × 고각 3방향)      │
-          │         └── TutorialVideoView (iPhone/iPad별 MP4 × 10개) │
-          └───────────────────────────┬──────────────────────────────┘
-                     session.finish() │
-                                      ▼  objectCaptureSession = nil (GPU 해제)
-          ┌───────────────────────────▼──────────────────────────────┐
-          │ PhotogrammetrySession (on-device 포토그래메트리)           │
-          │                                                           │
-          │  HEIC 이미지 폴더 → .modelFile(url: outputFile) 요청      │
-          │                                                           │
-          │  for await output in UntilProcessingCompleteFilter(...) { │
-          │    .requestProgress      → 진행률 UI (0% ~ 100%)          │
-          │    .requestProgressInfo  → 처리 단계 표시                  │
-          │      preProcessing → imageAlignment → pointCloudGen       │
-          │      → meshGeneration → textureMapping → optimization     │
-          │    .processingComplete   → USDZ 완성                      │
-          │  }                                                        │
-          └───────────────────────────┬──────────────────────────────┘
-                                      │
-                         Documents/Models/3D_<UUID>.usdz 저장
-                                      │
-                                      ▼
-                          QLPreviewController (AR Quick Look)
-                          스캔 직후 AR 미리보기 → WritePost 복귀
+[게시글 작성] → "모델 생성하기"
+       │
+       ▼  AppDataModel.startNewCapture()
+  ObjectCaptureSession
+  ├── Configuration { checkpointDirectory, isOverCaptureEnabled: true }
+  ├── ObjectCaptureView (바운딩 박스 자동 감지 · 카메라 피드)
+  ├── CaptureOverlayView (촬영 수 · 수동 셔터 · 실시간 품질 피드백)
+  └── 3-Orbit 가이드 (수평 → 저각 → 고각)
+        └── TutorialVideoView (iPhone/iPad별 MP4 × 10개)
+       │
+       ▼  session.finish()  →  objectCaptureSession = nil (GPU 해제)
+  PhotogrammetrySession  (on-device 포토그래메트리)
+  ├── HEIC 이미지 폴더 → .modelFile 요청
+  └── for await output in UntilProcessingCompleteFilter(session.outputs)
+        .requestProgress     → 진행률 UI (0% ~ 100%)
+        .requestProgressInfo → 처리 단계 (preProcessing → imageAlignment
+                               → pointCloudGen → meshGen → textureMapping → optimization)
+        .processingComplete  → USDZ 완성
+       │
+       ▼  Documents/Models/3D_<UUID>.usdz 저장
+  QLPreviewController — 스캔 직후 AR 미리보기
+       │
+       ▼  게시글 작성 화면으로 복귀 → AR 파일 업로드 → 등록
 ```
 
-### AR 뷰어 파이프라인
+### Swift Concurrency 활용
 
-```
-[PostDetail] → post.ar_model_id != nil → "AR로 보기" 버튼 활성화
-                                                │
-                                                ▼
-                              ArView(url: post.ar_model_directory)
-                                                │
-                              URLSession.dataTask(서버 USDZ 다운로드)
-                                                │
-                                                ▼
-                              QLPreviewController (AR Quick Look)
-
-                              Apple이 자동 처리:
-                                ✓ 바닥/테이블 평면 자동 감지
-                                ✓ 핀치 제스처로 크기 조절
-                                ✓ 드래그로 위치 이동
-                                ✓ 환경 조명(IBL) + 그림자 자동 적용
-```
-
-### Swift Concurrency 활용 포인트
-
-`ObjectCaptureSession`의 이벤트를 콜백 없이 `AsyncSequence`로 구독합니다.
+`ObjectCaptureSession` 이벤트를 콜백 없이 `AsyncSequence`로 구독합니다.
 
 ```swift
-// 실시간 피드백 구독 — for await 루프
-for await newFeedback in session.feedbackUpdates {
-    updateFeedbackMessages(for: newFeedback)
+// 실시간 피드백 구독
+for await feedback in session.feedbackUpdates {
+    updateFeedbackMessages(for: feedback)
 }
 
-// 세션 상태 변경 구독
+// 세션 상태 전환 구독 — 자동 상태 머신 구동
 for await newState in session.stateUpdates {
-    onStateChanged(newState: newState)  // 자동 상태 전환
+    onStateChanged(newState: newState)
 }
 ```
 
-`PhotogrammetrySession.outputs`가 완료 후에도 스트림을 닫지 않는 문제는 커스텀 `AsyncIteratorProtocol`로 해결했습니다.
+`PhotogrammetrySession.outputs`은 완료 후에도 스트림을 종료하지 않는 문제를 커스텀 `AsyncIteratorProtocol`로 해결했습니다.
 
 ```swift
-struct UntilProcessingCompleteFilter<Base>: AsyncSequence, AsyncIteratorProtocol {
-    mutating func next() async -> Element? {
-        if completed { return nil }  // processingComplete 이후 자동 종료
-        // ...
+struct UntilProcessingCompleteFilter<Base: AsyncSequence>: AsyncSequence, AsyncIteratorProtocol {
+    mutating func next() async -> PhotogrammetrySession.Output? {
+        guard !completed else { return nil }  // processingComplete 이후 자동 종료
+        guard let output = try? await iterator.next() else { return nil }
+        if case .processingComplete = output { completed = true }
+        return output
     }
 }
 ```
 
-### AR ↔ 마켓플레이스 연결 구조
-
-두 도메인은 `Post` 모델의 두 Optional 필드로 느슨하게 연결됩니다.
+### AR ↔ 마켓플레이스 연결
 
 ```swift
 struct Post: Identifiable, Decodable {
-    // ...
-    var ar_model_id: Int?           // AR 연결 여부 판별 키
-    var ar_model_directory: String? // USDZ 파일 경로 (서버 상대 경로)
+    // 마켓플레이스 필드 ...
+    var ar_model_id: Int?           // nil → AR 없는 일반 게시글
+    var ar_model_directory: String? // USDZ 서버 경로
 }
 
 // PostDetail — AR 버튼 분기
-if post.ar_model_id == nil {
-    // "등록된 AR 모델이 없습니다." 알림
+if let _ = post.ar_model_id {
+    NavigationLink { ArView(url: post.ar_model_directory) }
+        label: { Text("AR로 보기") }
 } else {
-    NavigationLink → ArView(url: post.ar_model_directory)
+    Text("등록된 AR 모델이 없습니다.")
 }
 ```
 
-AR 모델이 없는 일반 게시글도 완전히 지원하면서, `ar_model_id`가 있을 때만 AR 기능을 활성화합니다.
+두 Optional 필드만으로 AR 도메인과 마켓플레이스 도메인이 느슨하게 연결되며, AR 모델 없는 일반 게시글도 완벽히 지원합니다.
 
 ---
 
-## 설치 및 실행 방법
+## 설치 및 실행
 
 ### 요구 사항
 
-| 항목 | 최소 요구 사항 |
-|------|-------------|
+| 항목 | 조건 |
+|------|------|
 | **Xcode** | 15.0 이상 |
 | **iOS** | 17.5 이상 |
-| **기기 (AR 스캔)** | LiDAR 탑재 기기 필수 (iPhone 12 Pro 이상) |
-| **기기 (AR 뷰어)** | iPhone / iPad 전 모델 지원 |
+| **기기 — AR 스캔** | LiDAR 탑재 기기 (iPhone 12 Pro / iPad Pro 2020 이상) |
+| **기기 — AR 뷰어** | iPhone / iPad 전 모델 |
 
-> AR 스캔 기능(`ObjectCaptureSession`)은 **LiDAR 탑재 기기**에서만 동작합니다.  
-> AR 뷰어(`QLPreviewController`)는 LiDAR 없이도 모든 기기에서 사용 가능합니다.
+> `ObjectCaptureSession`은 LiDAR 탑재 기기에서만 동작합니다. AR 뷰어(`QLPreviewController`)는 전 기기에서 사용 가능합니다.
 
-### 실행 순서
+### 실행
 
 ```bash
-# 1. 저장소 클론
 git clone https://github.com/<your-username>/ar-marketplace-ios.git
 cd ar-marketplace-ios
-
-# 2. Xcode로 프로젝트 열기
 open MVVM_Ueong.xcodeproj
 ```
 
 ```
-# 3. Xcode 내 설정
-- Signing & Capabilities → 개인 Team ID로 변경
-- 실기기 선택 (시뮬레이터에서 AR 기능 미지원)
-
-# 4. Run (⌘R)
+Xcode 내:
+1. Signing & Capabilities → Team을 개인 Apple ID로 변경
+2. 실기기 선택 (시뮬레이터는 AR 기능 미지원)
+3. ⌘R 실행
 ```
 
-> **서버 연동**: 현재 `Constants.swift`의 `baseURL`이 개발 서버를 가리킵니다.  
-> 로컬 서버 실행이 필요한 경우 Node.js 백엔드 저장소를 별도로 클론해 실행하세요.
+> `Constants.swift`의 `baseURL`이 현재 개발 서버를 가리킵니다. 로컬 서버가 필요하면 Node.js 백엔드 저장소를 별도로 실행하세요.
 
 ### 프로젝트 구조
 
 ```
-ar-marketplace-ios/
-├── MVVM_Ueong/
-│   ├── ARCapture/          # AR 스캔 · 재구성 서브시스템 (26개 파일)
-│   │   ├── AppDataModel.swift          # 핵심 상태 머신 (394줄)
-│   │   ├── CaptureFolderManager.swift  # 파일시스템 관리 (294줄)
-│   │   ├── ReconstructionPrimaryView.swift
-│   │   └── Resources/      # 튜토리얼 MP4 × 10개 (iPhone/iPad)
-│   ├── Models/             # Codable 도메인 구조체 (10개)
-│   ├── Network/            # APICall.swift — HTTP 공통 클라이언트
-│   ├── Repositories/       # 도메인별 API 추상화 (11개)
-│   ├── Service/            # Socket.IO 서비스
-│   ├── System/             # AppDelegate, AppState
-│   ├── UI/
-│   │   ├── Component/      # 재사용 컴포넌트 (PostRow, SearchBar ...)
-│   │   └── Screens/        # 화면 15개 × (View + ViewModel)
-│   └── Utils/              # Keychain, TokenManager, Formatter ...
-└── docs/
-    ├── analysis/           # 단계별 기술 분석 문서
-    └── presentation.pdf    # 발표자료
+MVVM_Ueong/
+├── ARCapture/           # AR 스캔·재구성 서브시스템 (26개 파일)
+│   ├── AppDataModel.swift           # Singleton + ModelState 상태 머신 (394줄)
+│   ├── CaptureFolderManager.swift   # 파일시스템 관리 (294줄)
+│   └── Resources/                  # 튜토리얼 MP4 × 10개 (iPhone/iPad)
+├── Models/              # Codable 도메인 구조체 — Post, User, Chat, AR, Emd ...
+├── Network/             # APICall.swift — 제네릭 HTTP 클라이언트 Singleton (300줄)
+├── Repositories/        # 도메인별 API 추상화 11개
+├── Service/             # SocketManagerService — Socket.IO + NotificationCenter 브리지
+├── System/              # AppDelegate, AppState (@EnvironmentObject 전역 인증 상태)
+├── UI/
+│   ├── Component/       # 재사용 컴포넌트 (PostRow, SearchBar, SelectRegion ...)
+│   └── Screens/         # 15개 화면 × (View + ViewModel) 쌍
+└── Utils/               # KeychainHelper · TokenManager · UserDefaultsManager
 ```
 
 ---
@@ -380,30 +310,15 @@ ar-marketplace-ios/
 
 ## 팀원 소개
 
-| 역할 | 담당 |
-|------|------|
-| **iOS 앱 개발** | SwiftUI · MVVM+Repository · AR 스캔/뷰어 · 마켓플레이스 전 기능 |
-| **Cloud / 백엔드** | Node.js/Express API · Socket.IO · AWS EC2 인프라 · 파일 서버 |
-
-<table>
-  <tr>
-    <td align="center">
-      <b>iOS 담당</b><br/>
-      <sub>SwiftUI · RealityKit · Socket.IO</sub>
-    </td>
-    <td align="center">
-      <b>Cloud 담당</b><br/>
-      <sub>Node.js · Express · AWS EC2</sub>
-    </td>
-  </tr>
-</table>
+| 역할 | 이름 | 담당 기술 |
+|------|------|---------|
+| **iOS 앱 개발** | 이름 | SwiftUI · MVVM+Repository · RealityKit AR · 마켓플레이스 전 기능 |
+| **Cloud / 백엔드** | 이름 | Node.js/Express · Socket.IO · AWS EC2 인프라 |
 
 ---
 
 <div align="center">
 
-**Swift 5.0** · **iOS 17.5+** · **RealityKit** · **SwiftUI** · **Socket.IO** · **AWS EC2**
-
-*109 Swift files · ~11,040 lines · 15 screens · 11 repositories · ~30 API endpoints*
+**109 Swift files · ~11,040 lines · 15 screens · 11 repositories · ~30 API endpoints**
 
 </div>
