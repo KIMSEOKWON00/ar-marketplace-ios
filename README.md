@@ -132,22 +132,22 @@ let response: Response = try await APICall.shared.post("photo", files: files)
 ### 전체 구조
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        iOS 앱 (어웡)                          │
-│                                                              │
-│  SwiftUI Views  ──►  ViewModels  ──►  Repositories (×11)    │
-│     (15 화면)       @Published          Post / Photo / AR     │
-│                          │              User / Chat / ...    │
-│                    NotificationCenter            │           │
-│                    .tokenExpired 등              ▼           │
-│  SocketManagerService ◄────────────► APICall.swift (Singleton)│
-│  (Socket.IO Singleton)              URLSession async/await   │
-└──────────────┬───────────────────────────────────┬──────────┘
-               │ Socket.IO (WebSocket)              │ HTTP REST
+┌────────────────────────────────────────────────────────────────┐
+│                        iOS 앱 (어웡)                             │
+│                                                                │
+│  SwiftUI Views  ──►  ViewModels  ──►  Repositories (×11)       │
+│     (15 화면)       @Published          Post / Photo / AR       │
+│                          │              User / Chat / ...      │
+│                    NotificationCenter            │             │
+│                    .tokenExpired 등              ▼              │
+│  SocketManagerService ◄────────────► APICall.swift (Singleton) │
+│  (Socket.IO Singleton)              URLSession async/await     │
+└──────────────┬───────────────────────────────────┬─────────────┘
+               │ Socket.IO (WebSocket)             │ HTTP REST
                ▼                                   ▼
 ┌──────────────────────────────────────────────────────────────┐
 │               AWS EC2 — Node.js / Express (:3000)            │
-│   REST API · Socket.IO 채팅 서버 · express.static 파일 서빙  │
+│   REST API · Socket.IO 채팅 서버 · express.static 파일 서빙       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
