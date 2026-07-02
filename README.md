@@ -43,6 +43,7 @@ Apple LiDAR 센서와 RealityKit의 `ObjectCaptureSession`을 활용해 **판매
 - **커스텀 `AsyncIteratorProtocol`** — `PhotogrammetrySession.outputs`가 완료 후에도 스트림을 종료하지 않는 RealityKit 동작을 `UntilProcessingCompleteFilter`로 직접 해결
 - **AR ↔ 마켓플레이스 느슨한 결합** — `Post.ar_model_id (Int?)` · `ar_model_directory (String?)` 두 Optional 필드만으로 두 도메인 연결. AR 모델이 없는 일반 게시글과 완벽히 공존
 - **3-Orbit 촬영 가이드 UX** — 단순 촬영 버튼이 아닌, iPhone/iPad별 MP4 튜토리얼 10개와 `OnboardingStateMachine`으로 최적 촬영 각도(수평/저각/고각)를 단계별 안내
+- **`Response` enum — 다형 API 응답 처리** — API마다 다른 응답 구조(`createId`, `affectedRows`, `message` 등)를 단일 `Response` enum 하나로 파싱. `Decodable` 기반 타입 안전 패턴으로 호출부 코드가 단순해짐
 
 ---
 
@@ -107,6 +108,26 @@ LiDAR로 물건을 3방향 촬영 → on-device 포토그래메트리로 USDZ 3D
 ---
 
 ## 시스템 아키텍처
+
+**MVVM + Repository 패턴**을 채택한 이유:
+- **MVVM**: View가 ViewModel의 `@Published` 속성만 구독하게 해 UI와 비즈니스 로직을 명확히 분리. SwiftUI의 선언형 렌더링과 자연스럽게 결합됨
+- **Repository**: 네트워크·로컬 저장소 등 데이터 소스를 ViewModel에서 추상화. 도메인별 11개 Repository로 API 로직을 캡슐화해 각 ViewModel이 "어떻게 가져오는가"가 아닌 "무엇을 할 것인가"에만 집중
+
+### API 응답 처리 (`Response` enum)
+
+API마다 다른 응답 구조를 단일 `Response` enum 하나로 처리합니다. 호출부에서 타입 분기 없이 일관된 인터페이스를 사용할 수 있습니다.
+
+```swift
+enum Response: Decodable {
+    case create(CreateResponse)       // createId: Int
+    case createMulti(CreateMultiResponse)
+    case update(UpdateResponse)       // affectedRows: Int
+    case message(MessageResponse)     // message: String
+}
+
+// 호출부 — 응답 타입에 관계없이 동일한 패턴
+let response: Response = try await APICall.shared.post("photo", files: files)
+```
 
 ### 전체 구조
 
@@ -297,6 +318,9 @@ MVVM_Ueong/
 │   ├── Component/       # 재사용 컴포넌트 (PostRow, SearchBar, SelectRegion ...)
 │   └── Screens/         # 15개 화면 × (View + ViewModel) 쌍
 └── Utils/               # KeychainHelper · TokenManager · UserDefaultsManager
+docs/
+├── images/              # 스크린샷
+└── presentation.pdf     # 발표자료
 ```
 
 ---
@@ -311,8 +335,8 @@ MVVM_Ueong/
 
 | 역할 | 이름 | 담당 기술 |
 |------|------|---------|
-| **iOS 앱 개발** | 이름 | SwiftUI · MVVM+Repository · RealityKit AR · 마켓플레이스 전 기능 |
-| **Cloud / 백엔드** | 이름 | Node.js/Express · Socket.IO · AWS EC2 인프라 |
+| **iOS 앱 개발** | [이름](https://github.com/username) | SwiftUI · MVVM+Repository · RealityKit AR · 마켓플레이스 전 기능 |
+| **Cloud / 백엔드** | [이름](https://github.com/username) | Node.js/Express · Socket.IO · AWS EC2 인프라 |
 
 ---
 
