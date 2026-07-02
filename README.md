@@ -55,7 +55,7 @@ LiDAR로 물건을 3방향 촬영 → on-device 포토그래메트리로 USDZ 3D
 
 | 스캔 시작 | 3-Orbit 촬영 가이드 | 재구성 진행 |
 |:---------:|:-------------------:|:-----------:|
-| <img src="./docs/images/ar_scan_start.png" width="180"> | <img src="./docs/images/ar_orbit_guide.png" width="180"> | <img src="./docs/images/ar_reconstruct.png" width="180"> |
+| <img src="./docs/images/ar_scan_start.png" width="120"> | <img src="./docs/images/ar_orbit_guide.png" width="120"> | <img src="./docs/images/ar_reconstruct.png" width="120"> |
 
 ### AR 뷰어 — 구매자
 
@@ -63,13 +63,13 @@ LiDAR로 물건을 3방향 촬영 → on-device 포토그래메트리로 USDZ 3D
 
 | 상품 상세 | AR 뷰어 (실제 공간) |
 |:---------:|:-------------------:|
-| <img src="./docs/images/post_detail.png" width="180"> | <img src="./docs/images/ar_viewer.png" width="180"> |
+| <img src="./docs/images/post_detail.png" width="120"> | <img src="./docs/images/ar_viewer.png" width="120"> |
 
 ### 마켓플레이스
 
 | 상품 목록 | 게시글 등록 | 실시간 채팅 |
 |:---------:|:-----------:|:-----------:|
-| <img src="./docs/images/posts_list.png" width="180"> | <img src="./docs/images/write_post.png" width="180"> | <img src="./docs/images/chat.png" width="180"> |
+| <img src="./docs/images/posts_list.png" width="120"> | <img src="./docs/images/write_post.png" width="120"> | <img src="./docs/images/chat.png" width="120"> |
 
 **구현된 기능:**
 - 상품 CRUD (등록 / 수정 / 비활성화) · 동네·AR 전용·정렬 필터 · 검색
