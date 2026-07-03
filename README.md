@@ -11,6 +11,8 @@
 
 <div align="center">   
 
+### AR(증강현실) 중고거래 마켓플레이스를 위한 ARKit + SwiftUI iOS 클라이언트 앱
+
 ![Swift](https://img.shields.io/badge/Swift-5.0-FA7343?logo=swift&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-17.5+-000000?logo=apple&logoColor=white)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-선언형_UI-0070C9?logo=swift&logoColor=white)
