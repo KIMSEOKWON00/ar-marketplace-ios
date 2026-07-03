@@ -6,10 +6,10 @@
   ██║  ██║██║  ██║██╗██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██╗███████╗   ██║   ██║     ███████╗██║  ██║╚██████╗███████╗
   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝╚══════╝
 
-                                     IOS   APP
+                                            iOS  APPLICATION
 ```
 
-<div align="center">
+<div align="center">   
 
 ![Swift](https://img.shields.io/badge/Swift-5.0-FA7343?logo=swift&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-17.5+-000000?logo=apple&logoColor=white)
